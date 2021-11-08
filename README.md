@@ -8,9 +8,9 @@ Here is how to use input-handler. Once instantiated the module will immediately 
 You can instantiate input-handler as follows:
 
     // For those who don't need verbose output.
-    let inputHandler = new require('input-handler')();
+    let inputHandler = new (require('input-handler'))();
     // If you need verbose output you can specify true as a parameter, you can optionally specify where you want this verbose output to be piped, using a callback.
-    let inputHandler = new require('input-handler')(true, console.log);
+    let inputHandler = new (require('input-handler'))(true, console.log);
 
 You may have noticed the false statement, along with passing console.log as a callback. This was added as I personally like to pipe debug information to custom TUI elements for debugging purposes, and felt it may be useful for others.
 

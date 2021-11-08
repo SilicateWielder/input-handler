@@ -27,12 +27,30 @@
 /////////////////////////////////////////////////////////////////////////////////////////
 
 const { throws } = require('assert');
-const colors = require('colors');
+const EventEmitter = require('events');
 const tty = require('tty');
 
-class inputHandler {
+class inputHandler extends EventEmitter {
     constructor(verboseMode = false, callback = console.log) {
-        this.qeue = [];
+        super();
+        
+        ////////////////////////////////////////
+        // The keypress history is stored here, 
+        // latest events are last in the array.
+        //
+        // This is useful for manual polling,
+        // where there may be opportunities
+        // for multiple keys to be pressed
+        // before input is processed.
+        ////////////////////////////////////////
+
+        
+        this.keys = [];
+
+        ////////////////////////////////////////
+        // Record cursor state here, including
+        // if it's currently being processed.
+        ////////////////////////////////////////
 
         this.cursor = {
             x: 0,
@@ -43,8 +61,9 @@ class inputHandler {
             scroll: 0
         }
 
-        this.verboseMode = verboseMode;
-        this.printCallback = callback
+
+        this.verboseMode = verboseMode; // Flag for verbose responses.
+        this.printCallback = callback // the callback for when we want to be verbose about what's going on.
 
         // Enable raw input mode. Use TTY if necessary.
         if(process.stdin.setRawMode) {
@@ -65,7 +84,7 @@ class inputHandler {
         process.stdin.on('keypress', (str, key) => {
 
             // Since we're intercepting keypresses. We need to implement a surefire 
-            // way for users to quit the program if needed. CTRL + C
+            // way for users to quit the program if needed. Good ol' CTRL + C
             if(key.ctrl && key.sequence == '\u0003') {
 
                 // Gotta disable cursor tracking.
@@ -95,39 +114,54 @@ class inputHandler {
         });
     }
 
-    handleCursor(key) {
-        //console.log(this.cursor.raw);
- 
+    ////////////////////////////////////////////
+    // For cursor events, they are handled here.
+    ////////////////////////////////////////////
+
+    handleCursor(key) { 
         if(key.sequence == 'm' || key.sequence == 'M')
         {
             let values = this.cursor.raw.split(';');
 
             if(values[0] == '0') {
                 this.cursor.leftClick = true;
+                this.emit('mouse-click', {x: this.cursor.x, y: this.cursor.y});
             } else {
                 this.cursor.leftClick = false;
-                
+
                 this.cursor.x = values[1];
                 this.cursor.y = values[2];
+
+                this.emit('mouse-move', {x: this.cursor.x, y: this.cursor.y});
             }
 
             if(values[0] != '0' && values[0] != '35') {
                 this.cursor.scroll = (values[0] == '64') ? 1 : -1;
+
+                this.emit('mouse-scroll', {x: this.cursor.x, y: this.cursor.y}, this.cursor.scroll);
             } else {
                 this.cursor.scroll = 0;
             }
 
             this.cursor.reading = false;
 
-            console.log(this.cursor);
+            if(this.verboseMode) {
+                this.printCallback(this.cursor);
+            }
+
         } else if (key.sequence != '\x1b[<') this.cursor.raw += '' + key.sequence;
     }
+    /////////////////////////////////////////////
+    // All other events are assumed to be 
+    // keyboard events, those are processed here.
+    /////////////////////////////////////////////
 
     handleKeyboard(key) {
-        this.qeue.push(key);
+        this.keys.push(key);
+        this.emit('keypress', key);
 
-        if(this.qeue.length > 20) {
-            this.qeue.shift();
+        if(this.keys.length > 20) {
+            this.keys.shift();
         }
 
         if(this.verboseMode) {
@@ -136,4 +170,5 @@ class inputHandler {
     }
 }
 
-let testController = new inputHandler(false, console.log);
+
+module.exports = inputHandler;

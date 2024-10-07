@@ -138,7 +138,7 @@ class inputHandler extends EventEmitter {
             if(values[0] != '0' && values[0] != '35') {
                 this.cursor.scroll = (values[0] == '64') ? 1 : -1;
 
-                this.emit('mouse-scroll', {x: this.cursor.x, y: this.cursor.y}, this.cursor.scroll);
+                this.emit('mouse-scroll', {dir: this.cursor.scroll});
             } else {
                 this.cursor.scroll = 0;
             }

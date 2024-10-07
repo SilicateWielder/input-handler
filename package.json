@@ -1,6 +1,6 @@
 {
   "name": "input-handler",
-  "version": "1.0.2",
+  "version": "1.0.4",
   "description": "An interface for handling keyboard and mouse input on linux, and possibly other operating systems.",
   "main": "inputHandler.js",
   "dependencies": {},
